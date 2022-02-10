@@ -141,7 +141,7 @@ def compute_avg_monthly_difference(time_series, first_year, last_year):
         #ogni riga la divido in due stringhe (della stessa lista), la prima corrisponde alla data e la seconda al numero di passeggeri
         elements = line.split(',')
 
-    #pulisco il carattere newline ed eventuali spazi ad inizio o a fine stringa con la funzione strip
+        #pulisco il carattere newline ed eventuali spazi ad inizio o a fine stringa con la funzione strip
         elements[-1] = elements[-1].strip()
 
         #se non sto processando l'intestazione...
@@ -199,6 +199,7 @@ def compute_avg_monthly_difference(time_series, first_year, last_year):
     elif (last_year not in years):
             raise ExamException('Errore: last_year non appartiene ai dati del file inserito.')
 
+    #controllo che gli anni inseriti in input non siano lo stesso
     if first_year == last_year:
         raise ExamException('Errore: first_year e last_year corrispondono allo stesso anno.')
         
@@ -213,7 +214,7 @@ def compute_avg_monthly_difference(time_series, first_year, last_year):
     #questa è la lista che, dopo essere stata modificata, verrà ritornata dalla funzione
     result = []
 
-     #prendo in considerazione un range di 12 posizioni che corrispondono ai 12 mesi (1=gennaio, 2=febbraio, ..., 12=dicembre)    
+    #prendo in considerazione un range di 12 posizioni che corrispondono ai 12 mesi (1=gennaio, 2=febbraio, ..., 12=dicembre)    
     for i in range(1, 13):
         #scrivo 13 perché l'estremo superiore viene considerato escluso 
         
