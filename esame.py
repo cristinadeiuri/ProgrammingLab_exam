@@ -60,6 +60,11 @@ class CSVTimeSeriesFile():
                 #stessa cosa di prima se il valore è negativo, passo avanti
                 if elements[1] < 0:
                     continue
+            
+                #se manca qualche dato relativo al numero di passeggeri per qualche mese faccio in modo da considerare 0
+                if elements[1] == '':
+                    elements[1] = elements[1].replace('', '0')
+                        
                  
                 #converto la stringa corrispondente al numero di passeggeri in floating point(numero intero) e la associo al suo valore
                 elements[1] = int(elements[1])
@@ -70,8 +75,7 @@ class CSVTimeSeriesFile():
                     last_month = 0
 
                 if not (int(data_split[0]) >= last_year and int(data_split[1]) > last_month):
-                    print('Errore nella data: mese o anno non consecutivo.')
-                    return None
+                    raise ExamException('Errore nella data: mese o anno non consecutivo.')                    
 
                 #setto le variabili usate
                 last_year = int(data_split[0])
@@ -98,158 +102,100 @@ def compute_avg_monthly_difference(time_series, first_year, last_year):
     if not isinstance(last_year, str):
         raise ExamException('Errore: last_year deve essere una stringa e non "{}".'.format(type(last_year)))
 
-
+        
+    #inizializzo una lista per salvare tutti gli anni presenti nel file
+    tot_years = []
+    #ricavo dalle liste di time_series i vari anni presenti e di conseguenza presenti all'interno del file
+    for list in time_series:
+        tot_years.append(list[0][0:4])
+    #print(tot_years) 
+        
+    #pongo che se il primo e l'ultimo anno non appartengono alla lista degli anni viene alzata un'eccezione
+    if ((first_year not in tot_years) and (last_year not in tot_years)):
+        raise ExamException('Errore: first_year e last_year non appartengono ai dati del file inserito.')
     
+    #se uno dei due esiste controllo più nello specifico anche first_year e last_year singolarmente
+    elif (first_year not in tot_years):
+        raise ExamException('Errore: first_year non appartiene ai dati del file inserito.')
+    elif (last_year not in tot_years):
+        raise ExamException('Errore: last_year non appartiene ai dati del file inserito.')
+
+   
     #provo a convertire first_year e last_year in valore numerico intero
     try:
         first_year = int(first_year)
         last_year = int(last_year)
     #se non è possibile alzo un'eccezione    
     except ValueError as e:
-        raise ExamException('"{}"'.format(e))
-    
-    #creo una nuova lista per salvare gli anni da prendere in considerazione
-    years_list = []
-        
-    #per facilitare le cose assegno la variabile f al primo anno dell'intervallo preso in considerazione
-    f = int(first_year)
-    
-    #aggiungo alla lista gli anni considerati
-    while f <= int(last_year):
-        years_list.append(f)
-        f = f + 1
-    #opzionale se voglio vedere la lista stampata: 
-    #print('Lista anni: {}'.format(years_list))
-
-
-    #inizializzo una lista per salvare i dati in numero intero
-    data_int = []
-
-    #provo a leggere la prima riga per vedere se si apre
-    try:
-        time_series_file = open('data.csv', 'r')
-        time_series_file.readline()
-    #alzo un'eccezione nel caso non si apra    
-    except:
-        raise ExamException('Errore in apertura file')
-    
-        #apro il file
-    time_series_file = open('data.csv', 'r')
-
-    for line in time_series_file:
-        #faccio lo split ad ogni linea del file 
-        #ogni riga la divido in due stringhe (della stessa lista), la prima corrisponde alla data e la seconda al numero di passeggeri
-        elements = line.split(',')
-
-        #pulisco il carattere newline ed eventuali spazi ad inizio o a fine stringa con la funzione strip
-        elements[-1] = elements[-1].strip()
-
-        #se non sto processando l'intestazione...
-        if elements[0] != 'date':
-
-            #creo una lista vuota per salvare i valori interi corrispondenti rispettivamente ad: anno, mese, numero passeggeri
-            list_int = []
-            
-            #associo gli elementi della prima stringa alla data
-            date = elements[0]
-            #divido la stringa in due: anno e mese
-            date = date.split('-')
-
-            
-            #associo la prima stringa di 'date' all'anno e la seconda al mese, convertendole in valore numerico
-            year = int(date[0])
-            month = int(date[1])
-
-            #aggiungo alla lista i valori della data
-            list_int.append(year)
-            list_int.append(month)
-
-                
-            #associo la seconda stringa al numero di passeggeri ed aggiungo alla lista il valore convertendolo in numero intero
-            passengers = int(elements[1])
-            list_int.append(passengers)
-
-            
-            #se manca qualche dato relativo al numero di passeggeri per qualche mese faccio in modo da considerare 0
-            if passengers == '':
-                passengers = passengers.replace('', '0')
-                        
-               
-            #aggiungo tutte le liste di valori interi create alla lista
-            data_int.append(list_int)
-      
-    #se voglio visualizzare tutte le liste in valore intero:
-    #for item in data_int:
-        #print(item)
-
-    #inizializzo una lista dove salvare i valori numerici corrispondenti agli anni
-    years = []
-    #aggiungo alla lista gli anni 
-    for item in data_int:
-        years.append(item[0])
-
-
-    #pongo che se il primo e l'ultimo anno non appartengono alla lista degli anni viene alzata un'eccezione
-    if ((first_year not in years) and (last_year not in years)):
-            raise ExamException('Errore: first_year e last_year non appartengono ai dati del file inserito.')
-    
-    #se uno dei due esiste controllo più nello specifico anche first_year e last_year singolarmente
-    elif (first_year not in years):
-            raise ExamException('Errore: first_year non appartiene ai dati del file inserito.')
-    elif (last_year not in years):
-            raise ExamException('Errore: last_year non appartiene ai dati del file inserito.')
+        raise ExamException(e)
 
     #controllo che gli anni inseriti in input non siano lo stesso
     if first_year == last_year:
         raise ExamException('Errore: first_year e last_year corrispondono allo stesso anno.')
         
     #controllo se gli anni sono in ordine crescente
-    for item in years:
-        if (last_year < first_year):
-            raise ExamException('Errore: le date non sono in ordine crescente.')
+    if (last_year < first_year):
+        raise ExamException('Errore: le date non sono in ordine crescente.')
+
         
+    #creo una nuova lista per salvare gli anni da prendere in considerazione
+    years_list = []
         
+    #per facilitare le cose assegno la variabile f al primo anno dell'intervallo preso in considerazione
+    f = first_year
+    
+    #aggiungo alla lista gli anni considerati
+    while f <= last_year:
+        years_list.append(f)
+        f = f + 1
+    #opzionale se voglio vedere la lista stampata: 
+    #print('Lista anni: {}'.format(years_list))
+
+    #inzializzo una lista per salvare i valori di tutti i mesi divisi per anni
+    passengers_number = []
+    for year in years_list:
+
+        specific_year = []
+        
+        for list in time_series:
+            #isolo i primi quattro caratteri di ciascuna lista, ovvero l'anno
+            if list[0][0:4] == str(year):
+                specific_year.append(list[1])
+
+        passengers_number.append(specific_year)
+                
+    #print(passengers_number)       
+                
 
     #inizializzo la lista dove salvare i valori dell'incremento medio richiesti
     #questa è la lista che, dopo essere stata modificata, verrà ritornata dalla funzione
     result = []
 
-    #prendo in considerazione un range di 12 posizioni che corrispondono ai 12 mesi (1=gennaio, 2=febbraio, ..., 12=dicembre)    
-    for i in range(1, 13):
-        #scrivo 13 perché l'estremo superiore viene considerato escluso 
+    #prendo in considerazione un range di 12 posizioni che corrispondono ai 12 mesi (0=gennaio, 1=febbraio, ..., 11=dicembre)    
+    for i in range(0, 12):
+        #scrivo 12 perché l'estremo superiore viene considerato escluso 
         
         #inizializzo una variabile per salvare la variazione di ogni mese
         v_month = 0
 
-        #inizializzo una lista di liste corrispondenti al numero di passeggeri di mese dei vari anni presi in condiderazione
-        #esempio: prima lista = numero di passeggeri del mese di gennaio per ogni anno dell'intervallo considerato
-        values = []
-
-        #aggiungo alla lista appena inizializzata il numero di passeggeri divisi per mese di ogni anno dell'intervallo considerato
-        for item in data_int:
-            if (item[1] == i) and item[0] in years_list:
-                values.append(item[2])
-
         
         #assegno la lunghezza della lista precedente ad una variabile d'appoggio
-        m = len(values)
+        m = len(passengers_number)
         
         #inizializzo una variabile che mi salva la differenza dei vari mesi
-        differenza = 0
+        differenza = [0]*12
 
         #calcolo la differenza del numero di passeggeri per ciascun mese dei vari anni considerati
-        while m > 1:
-            differenza += values[m - 1] - values [m - 2]
-            m = m - 1
+        for item in range(1, m):           
+            differenza[i] += passengers_number[item][i] - passengers_number[item-1][i]
+           
 
         #faccio la media, dividendo la differenza ottenuta precedentemente per la lunghezza della lista - 1
-        v_month = differenza/(len(values)-1)
+        v_month = differenza[i]/(m-1)
 
         #salvo il risultato sulla lista
         result.append(v_month)
 
-        #procedo e calcolo l'incremento medio per tutti i 12 mesi
-        i += 1
     
     #ritorno il risultato
     return result
